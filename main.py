@@ -21,56 +21,150 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for better styling
+# Custom CSS for better styling - Updated to match dark theme with orange accents
 st.markdown("""
 <style>
     .main-header {
         font-size: 2.5rem;
-        color: #1f77b4;
+        color: #e86b0f;
         text-align: center;
         margin-bottom: 2rem;
+        text-shadow: 0 0 10px rgba(232, 107, 15, 0.3);
     }
     .upload-section {
-        background-color: #f0f2f6;
+        background-color: #605e5e;
         padding: 2rem;
         border-radius: 10px;
         margin: 1rem 0;
+        border: 2px solid #e86b0f;
+        box-shadow: 0 4px 8px rgba(232, 107, 15, 0.2);
     }
     .results-section {
-        background-color: #e8f4fd;
+        background-color: #605e5e;
         padding: 2rem;
         border-radius: 10px;
         margin: 1rem 0;
+        border: 2px solid #e86b0f;
+        box-shadow: 0 4px 8px rgba(232, 107, 15, 0.2);
     }
     .email-item {
-        background-color: white;
-        padding: 0.5rem;
-        margin: 0.25rem 0;
-        border-radius: 5px;
-        border-left: 4px solid #1f77b4;
+        background-color: #000000;
+        color: #f7f7f7;
+        padding: 0.8rem;
+        margin: 0.5rem 0;
+        border-radius: 8px;
+        border-left: 4px solid #e86b0f;
+        box-shadow: 0 2px 4px rgba(232, 107, 15, 0.3);
+        transition: all 0.3s ease;
+    }
+    .email-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 8px rgba(232, 107, 15, 0.5);
     }
     .automation-section {
-        background-color: #fff3cd;
+        background-color: #605e5e;
         padding: 2rem;
         border-radius: 10px;
         margin: 1rem 0;
-        border: 1px solid #ffeaa7;
+        border: 2px solid #e86b0f;
+        box-shadow: 0 4px 8px rgba(232, 107, 15, 0.2);
     }
     .progress-bar {
-        background-color: #e9ecef;
+        background-color: #000000;
         border-radius: 10px;
         padding: 1rem;
         margin: 1rem 0;
+        border: 2px solid #e86b0f;
     }
     .debug-log {
-        background-color: #f8f9fa;
+        background-color: #000000;
+        color: #f7f7f7;
         padding: 1rem;
-        border-radius: 5px;
-        border: 1px solid #dee2e6;
-        font-family: monospace;
+        border-radius: 8px;
+        border: 2px solid #e86b0f;
+        font-family: 'Courier New', monospace;
         font-size: 12px;
         max-height: 400px;
         overflow-y: auto;
+        box-shadow: inset 0 0 10px rgba(232, 107, 15, 0.1);
+    }
+    .stButton > button {
+        background-color: #e86b0f !important;
+        color: #000000 !important;
+        border: 2px solid #e86b0f !important;
+        border-radius: 8px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton > button:hover {
+        background-color: #000000 !important;
+        color: #e86b0f !important;
+        border-color: #e86b0f !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 8px rgba(232, 107, 15, 0.4) !important;
+    }
+    .stTextInput > div > div > input {
+        background-color: #000000 !important;
+        color: #f7f7f7 !important;
+        border: 2px solid #605e5e !important;
+        border-radius: 8px !important;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: #e86b0f !important;
+        box-shadow: 0 0 8px rgba(232, 107, 15, 0.3) !important;
+    }
+    .stSelectbox > div > div > div {
+        background-color: #000000 !important;
+        color: #f7f7f7 !important;
+        border: 2px solid #605e5e !important;
+        border-radius: 8px !important;
+    }
+    .stSelectbox > div > div > div:focus {
+        border-color: #e86b0f !important;
+        box-shadow: 0 0 8px rgba(232, 107, 15, 0.3) !important;
+    }
+    .stFileUploader > div > div > div {
+        background-color: #000000 !important;
+        color: #f7f7f7 !important;
+        border: 2px solid #605e5e !important;
+        border-radius: 8px !important;
+    }
+    .stFileUploader > div > div > div:hover {
+        border-color: #e86b0f !important;
+    }
+    .stProgress > div > div > div > div {
+        background-color: #e86b0f !important;
+    }
+    .stProgress > div > div > div > div > div {
+        background-color: #e86b0f !important;
+    }
+    .stSuccess {
+        background-color: #605e5e !important;
+        color: #e86b0f !important;
+        border: 2px solid #e86b0f !important;
+        border-radius: 8px !important;
+        padding: 1rem !important;
+    }
+    .stError {
+        background-color: #605e5e !important;
+        color: #ff6b6b !important;
+        border: 2px solid #ff6b6b !important;
+        border-radius: 8px !important;
+        padding: 1rem !important;
+    }
+    .stWarning {
+        background-color: #605e5e !important;
+        color: #ffd93d !important;
+        border: 2px solid #ffd93d !important;
+        border-radius: 8px !important;
+        padding: 1rem !important;
+    }
+    .stInfo {
+        background-color: #605e5e !important;
+        color: #4ecdc4 !important;
+        border: 2px solid #4ecdc4 !important;
+        border-radius: 8px !important;
+        padding: 1rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
