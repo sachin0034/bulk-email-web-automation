@@ -341,15 +341,41 @@ def automate_maven_signup(emails, maven_url, delay_between_emails=2, log_contain
         debug_log("❌ ERROR: No emails provided to process!", log_container)
         return []
     
-    # Configure Chrome options with more debugging
+    # Configure Chrome options for Render deployment
     chrome_options = Options()
-    chrome_options.add_argument('--start-maximized')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-extensions')
-    chrome_options.add_argument('--disable-web-security')
-    chrome_options.add_argument('--allow-running-insecure-content')
+    
+    # Essential options for server environment
+    chrome_options.add_argument('--headless')  # Run in headless mode
+    chrome_options.add_argument('--no-sandbox')  # Required for root user
+    chrome_options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
+    chrome_options.add_argument('--disable-gpu')  # Disable GPU hardware acceleration
+    chrome_options.add_argument('--disable-extensions')  # Disable extensions
+    chrome_options.add_argument('--disable-web-security')  # Disable web security
+    chrome_options.add_argument('--allow-running-insecure-content')  # Allow insecure content
+    
+    # Additional options for stability
+    chrome_options.add_argument('--remote-debugging-port=9222')
+    chrome_options.add_argument('--disable-background-timer-throttling')
+    chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+    chrome_options.add_argument('--disable-renderer-backgrounding')
+    chrome_options.add_argument('--disable-features=TranslateUI')
+    chrome_options.add_argument('--disable-ipc-flooding-protection')
+    
+    # Set Chrome binary location for Render
+    chrome_options.binary_location = "/usr/bin/google-chrome"
+    
+    # Set user data directory to avoid conflicts
+    chrome_options.add_argument('--user-data-dir=/tmp/chrome-user-data')
+    chrome_options.add_argument('--data-path=/tmp/chrome-data-path')
+    chrome_options.add_argument('--homedir=/tmp')
+    chrome_options.add_argument('--disk-cache-dir=/tmp/chrome-cache')
+    chrome_options.add_argument('--media-cache-dir=/tmp/chrome-media-cache')
+    chrome_options.add_argument('--disk-cache-size=1')
+    chrome_options.add_argument('--media-cache-size=1')
+    chrome_options.add_argument('--aggressive-cache-discard')
+    chrome_options.add_argument('--memory-pressure-off')
+    chrome_options.add_argument('--max_old_space_size=4096')
+    
     chrome_options.add_argument('--verbose')  # More verbose logging
     
     debug_log("✓ Chrome options configured", log_container)
@@ -360,35 +386,52 @@ def automate_maven_signup(emails, maven_url, delay_between_emails=2, log_contain
     try:
         debug_log("🔧 Attempting to initialize Chrome driver...", log_container)
         
-        # Try webdriver-manager first
+        # Try system ChromeDriver first (for Render deployment)
         try:
-            debug_log("📦 Trying webdriver-manager approach...", log_container)
-            from webdriver_manager.chrome import ChromeDriverManager
+            debug_log("🔧 Trying system ChromeDriver...", log_container)
             from selenium.webdriver.chrome.service import Service
             
-            debug_log("✓ webdriver-manager imported successfully", log_container)
-            
-            chrome_driver_path = ChromeDriverManager().install()
-            debug_log(f"✓ ChromeDriver downloaded to: {chrome_driver_path}", log_container)
+            # Use system ChromeDriver installed during build
+            chrome_driver_path = "/usr/local/bin/chromedriver"
+            debug_log(f"🔧 Using system ChromeDriver: {chrome_driver_path}", log_container)
             
             service = Service(chrome_driver_path)
             debug_log("✓ ChromeDriver service created", log_container)
             
             driver = webdriver.Chrome(service=service, options=chrome_options)
-            debug_log("✅ Chrome driver initialized successfully with webdriver-manager!", log_container)
+            debug_log("✅ Chrome driver initialized successfully with system ChromeDriver!", log_container)
             
         except Exception as e:
-            debug_log(f"❌ webdriver-manager failed: {str(e)}", log_container)
+            debug_log(f"❌ System ChromeDriver failed: {str(e)}", log_container)
             debug_log(f"📋 Full error trace: {traceback.format_exc()}", log_container)
-            debug_log("🔄 Trying direct Chrome driver initialization...", log_container)
+            debug_log("🔄 Trying webdriver-manager as fallback...", log_container)
             
             try:
-                driver = webdriver.Chrome(options=chrome_options)
-                debug_log("✅ Chrome driver initialized successfully with direct method!", log_container)
+                # Fallback to webdriver-manager
+                from webdriver_manager.chrome import ChromeDriverManager
+                
+                chrome_driver_path = ChromeDriverManager().install()
+                debug_log(f"✓ ChromeDriver downloaded to: {chrome_driver_path}", log_container)
+                
+                service = Service(chrome_driver_path)
+                debug_log("✓ ChromeDriver service created", log_container)
+                
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+                debug_log("✅ Chrome driver initialized successfully with webdriver-manager!", log_container)
+                
             except Exception as e2:
-                debug_log(f"❌ Direct Chrome driver also failed: {str(e2)}", log_container)
+                debug_log(f"❌ webdriver-manager also failed: {str(e2)}", log_container)
                 debug_log(f"📋 Full error trace: {traceback.format_exc()}", log_container)
-                raise Exception(f"Both webdriver-manager and direct Chrome initialization failed. Last error: {str(e2)}")
+                
+                # Final fallback - direct initialization
+                debug_log("🔄 Trying direct Chrome driver initialization...", log_container)
+                try:
+                    driver = webdriver.Chrome(options=chrome_options)
+                    debug_log("✅ Chrome driver initialized successfully with direct method!", log_container)
+                except Exception as e3:
+                    debug_log(f"❌ All Chrome initialization methods failed!", log_container)
+                    debug_log(f"📋 Final error: {str(e3)}", log_container)
+                    raise Exception(f"All Chrome initialization methods failed. Last error: {str(e3)}")
         
         # Test that driver is working
         debug_log("🧪 Testing driver with simple navigation...", log_container)

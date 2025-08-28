@@ -1,4 +1,4 @@
-# Maven Email Automation - Python Dependencies
+# Maven Email Automation - Python Dependencies (Render Compatible)
 # Core web framework
 streamlit
 
@@ -8,10 +8,8 @@ pandas
 # AI-powered email extraction
 openai
 
-# Web automation
+# Web automation (for Render deployment)
 selenium
-
-# Chrome driver management
 webdriver-manager
 
 # Additional dependencies for server environments
@@ -26,3 +24,6 @@ urllib3
 # os - Built-in Python module
 # datetime - Built-in Python module
 # traceback - Built-in Python module
+
+# NOTE: This version includes Selenium for full automation on Render
+# For Streamlit Cloud deployment, remove selenium and webdriver-manager
