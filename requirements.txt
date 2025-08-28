@@ -14,6 +14,10 @@ selenium
 # Chrome driver management
 webdriver-manager
 
+# Additional dependencies for server environments
+requests
+urllib3
+
 # Additional dependencies that may be needed
 # (These are usually included with the above packages)
 # re - Built-in Python module for regex

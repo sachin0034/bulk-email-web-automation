@@ -21,6 +21,46 @@ st.set_page_config(
     layout="wide"
 )
 
+# Check if running in headless/server environment
+def is_server_environment():
+    """Check if running in a server/headless environment"""
+    return os.environ.get('RENDER', False) or os.environ.get('HEROKU', False) or os.environ.get('DOCKER', False)
+
+# Install Chrome for Linux environments if needed
+def install_chrome_linux():
+    """Install Chrome browser for Linux environments"""
+    try:
+        import subprocess
+        import sys
+        
+        # Check if Chrome is already installed
+        result = subprocess.run(['which', 'google-chrome'], capture_output=True, text=True)
+        if result.returncode == 0:
+            debug_log("✓ Chrome is already installed")
+            return True
+            
+        debug_log("📦 Installing Chrome for Linux...")
+        
+        # Update package list
+        subprocess.run(['apt-get', 'update'], check=True)
+        
+        # Install Chrome dependencies
+        subprocess.run(['apt-get', 'install', '-y', 'wget', 'gnupg'], check=True)
+        
+        # Add Google Chrome repository
+        subprocess.run(['wget', '-q', '-O', '-', 'https://dl.google.com/linux/linux_signing_key.pub'], 
+                      stdout=subprocess.PIPE, check=True)
+        
+        # Install Chrome
+        subprocess.run(['apt-get', 'install', '-y', 'google-chrome-stable'], check=True)
+        
+        debug_log("✅ Chrome installed successfully")
+        return True
+        
+    except Exception as e:
+        debug_log(f"❌ Failed to install Chrome: {str(e)}")
+        return False
+
 # Custom CSS for better styling
 st.markdown("""
 <style>
@@ -176,13 +216,43 @@ def test_chrome_setup():
         
         # Configure Chrome options
         chrome_options = Options()
-        chrome_options.add_argument('--start-maximized')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-web-security')
-        chrome_options.add_argument('--allow-running-insecure-content')
+        
+        # Check if running in server environment
+        if is_server_environment():
+            log_debug("🌐 Running in server environment - configuring headless mode")
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--allow-running-insecure-content')
+            chrome_options.add_argument('--remote-debugging-port=9222')
+            chrome_options.add_argument('--disable-background-timer-throttling')
+            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+            chrome_options.add_argument('--disable-renderer-backgrounding')
+            chrome_options.add_argument('--disable-features=TranslateUI')
+            chrome_options.add_argument('--disable-ipc-flooding-protection')
+            chrome_options.add_argument('--user-data-dir=/tmp/chrome-user-data')
+            chrome_options.add_argument('--data-path=/tmp/chrome-data-path')
+            chrome_options.add_argument('--homedir=/tmp')
+            chrome_options.add_argument('--disk-cache-dir=/tmp/chrome-cache')
+            chrome_options.add_argument('--media-cache-dir=/tmp/chrome-media-cache')
+            chrome_options.add_argument('--disk-cache-size=1')
+            chrome_options.add_argument('--media-cache-size=1')
+            chrome_options.add_argument('--aggressive-cache-discard')
+            chrome_options.add_argument('--memory-pressure-off')
+            chrome_options.add_argument('--max_old_space_size=4096')
+        else:
+            # Local development options
+            chrome_options.add_argument('--start-maximized')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--allow-running-insecure-content')
+        
         log_debug("✓ Chrome options configured")
         
         # Try webdriver-manager first
@@ -249,16 +319,56 @@ def automate_maven_signup(emails, maven_url, delay_between_emails=2, log_contain
     
     # Configure Chrome options with more debugging
     chrome_options = Options()
-    chrome_options.add_argument('--start-maximized')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-extensions')
-    chrome_options.add_argument('--disable-web-security')
-    chrome_options.add_argument('--allow-running-insecure-content')
+    
+    # Check if running in server environment
+    if is_server_environment():
+        debug_log("🌐 Running in server environment - configuring headless mode", log_container)
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--allow-running-insecure-content')
+        chrome_options.add_argument('--remote-debugging-port=9222')
+        chrome_options.add_argument('--disable-background-timer-throttling')
+        chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+        chrome_options.add_argument('--disable-renderer-backgrounding')
+        chrome_options.add_argument('--disable-features=TranslateUI')
+        chrome_options.add_argument('--disable-ipc-flooding-protection')
+        chrome_options.add_argument('--user-data-dir=/tmp/chrome-user-data')
+        chrome_options.add_argument('--data-path=/tmp/chrome-data-path')
+        chrome_options.add_argument('--homedir=/tmp')
+        chrome_options.add_argument('--disk-cache-dir=/tmp/chrome-cache')
+        chrome_options.add_argument('--media-cache-dir=/tmp/chrome-media-cache')
+        chrome_options.add_argument('--disk-cache-size=1')
+        chrome_options.add_argument('--media-cache-size=1')
+        chrome_options.add_argument('--aggressive-cache-discard')
+        chrome_options.add_argument('--memory-pressure-off')
+        chrome_options.add_argument('--max_old_space_size=4096')
+    else:
+        # Local development options
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--allow-running-insecure-content')
+    
     chrome_options.add_argument('--verbose')  # More verbose logging
     
     debug_log("✓ Chrome options configured", log_container)
+    
+    # Install Chrome for server environments if needed
+    if is_server_environment():
+        debug_log("🔧 Checking Chrome installation for server environment...", log_container)
+        try:
+            install_chrome_linux()
+            debug_log("✅ Chrome installation check completed", log_container)
+        except Exception as e:
+            debug_log(f"⚠️ Chrome installation check failed: {str(e)}", log_container)
+            debug_log("🔄 Continuing with existing Chrome installation...", log_container)
     
     driver = None
     results = []
@@ -294,7 +404,21 @@ def automate_maven_signup(emails, maven_url, delay_between_emails=2, log_contain
             except Exception as e2:
                 debug_log(f"❌ Direct Chrome driver also failed: {str(e2)}", log_container)
                 debug_log(f"📋 Full error trace: {traceback.format_exc()}", log_container)
-                raise Exception(f"Both webdriver-manager and direct Chrome initialization failed. Last error: {str(e2)}")
+                
+                # Try with system Chrome if available
+                debug_log("🔄 Trying system Chrome installation...", log_container)
+                try:
+                    if is_server_environment():
+                        # Set Chrome binary path for server environments
+                        chrome_options.binary_location = "/usr/bin/google-chrome"
+                        debug_log("🔧 Set Chrome binary location to /usr/bin/google-chrome", log_container)
+                    
+                    driver = webdriver.Chrome(options=chrome_options)
+                    debug_log("✅ Chrome driver initialized successfully with system Chrome!", log_container)
+                except Exception as e3:
+                    debug_log(f"❌ System Chrome also failed: {str(e3)}", log_container)
+                    debug_log(f"📋 Full error trace: {traceback.format_exc()}", log_container)
+                    raise Exception(f"All Chrome initialization methods failed. Last error: {str(e3)}")
         
         # Test that driver is working
         debug_log("🧪 Testing driver with simple navigation...", log_container)
