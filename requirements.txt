@@ -1,0 +1,24 @@
+# Maven Email Automation - Python Dependencies
+# Core web framework
+streamlit
+
+# Data processing and CSV handling
+pandas
+
+# AI-powered email extraction
+openai
+
+# Web automation
+selenium
+
+# Chrome driver management
+webdriver-manager
+
+# Additional dependencies that may be needed
+# (These are usually included with the above packages)
+# re - Built-in Python module for regex
+# time - Built-in Python module
+# json - Built-in Python module
+# os - Built-in Python module
+# datetime - Built-in Python module
+# traceback - Built-in Python module
