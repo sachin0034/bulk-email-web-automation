@@ -36,7 +36,7 @@ services:
       echo "Chrome binary: $(which google-chrome)"
       echo "ChromeDriver: $(which chromedriver)"
 
-    startCommand: streamlit run main.py --server.port $PORT --server.address 0.0.0.0
+    startCommand: "streamlit run main.py --server.port $PORT --server.address 0.0.0.0"
     envVars:
       - key: RENDER
         value: true
