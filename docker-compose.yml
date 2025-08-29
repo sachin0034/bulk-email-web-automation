@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  maven-automation:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - RENDER=false
+      - CHROME_BIN=/usr/bin/google-chrome
+      - CHROMEDRIVER_PATH=/usr/local/bin/chromedriver
+      - DISPLAY=:99
+      - SELENIUM_HEADLESS=true
+      - CHROME_HEADLESS=true
+    volumes:
+      # Mount current directory for development
+      - .:/app
+      # Mount a volume for Chrome user data
+      - chrome-data:/tmp/chrome-user-data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  chrome-data:
