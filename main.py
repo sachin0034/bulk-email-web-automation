@@ -268,20 +268,51 @@ def test_chrome_setup():
     try:
         log_debug("🔍 Starting Chrome driver test...")
         
-        # Configure Chrome options
+        # Detect environment
+        import platform
+        is_windows = platform.system().lower() == "windows"
+        is_render = os.environ.get('RENDER', False)
+        
+        log_debug(f"🔍 Environment detected: {'Windows' if is_windows else 'Linux/Render'}")
+        
+        # Configure Chrome options based on environment
         chrome_options = Options()
-        chrome_options.add_argument('--start-maximized')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-web-security')
-        chrome_options.add_argument('--allow-running-insecure-content')
+        
+        if is_windows:
+            # Windows-specific options
+            log_debug("🪟 Using Windows Chrome configuration")
+            chrome_options.add_argument('--start-maximized')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--allow-running-insecure-content')
+            
+            # Windows user data directory
+            import tempfile
+            temp_dir = tempfile.gettempdir()
+            chrome_options.add_argument(f'--user-data-dir={temp_dir}/chrome-user-data')
+            chrome_options.add_argument(f'--disk-cache-dir={temp_dir}/chrome-cache')
+            
+        else:
+            # Linux/Render options
+            log_debug("🐧 Using Linux/Render Chrome configuration")
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--allow-running-insecure-content')
+            
+            if is_render:
+                chrome_options.binary_location = "/usr/bin/google-chrome"
+        
         log_debug("✓ Chrome options configured")
         
-        # Try webdriver-manager first
+        # Try webdriver-manager first (works on both platforms)
         try:
-            log_debug("🔄 Trying webdriver-manager...")
+            log_debug("📦 Trying webdriver-manager...")
             from webdriver_manager.chrome import ChromeDriverManager
             from selenium.webdriver.chrome.service import Service
             
@@ -305,7 +336,34 @@ def test_chrome_setup():
             log_debug(f"❌ webdriver-manager failed: {str(e)}")
             log_debug(f"Full error: {traceback.format_exc()}")
             
-            # Try direct method
+            # Try system ChromeDriver on Linux/Render
+            if not is_windows:
+                log_debug("🔄 Trying system ChromeDriver on Linux...")
+                try:
+                    from selenium.webdriver.chrome.service import Service
+                    
+                    chrome_driver_path = "/usr/local/bin/chromedriver"
+                    log_debug(f"🔧 Using system ChromeDriver: {chrome_driver_path}")
+                    
+                    service = Service(chrome_driver_path)
+                    log_debug("✓ ChromeDriver service created")
+                    
+                    driver = webdriver.Chrome(service=service, options=chrome_options)
+                    log_debug("✅ Chrome driver initialized successfully with system ChromeDriver!")
+                    
+                    # Test navigation
+                    driver.get("https://www.google.com")
+                    log_debug("✅ Test navigation successful")
+                    
+                    driver.quit()
+                    log_debug("✅ Chrome driver test completed successfully!")
+                    return True, debug_messages
+                    
+                except Exception as e2:
+                    log_debug(f"❌ System ChromeDriver also failed: {str(e2)}")
+                    log_debug(f"Full error: {traceback.format_exc()}")
+            
+            # Final fallback - direct initialization
             log_debug("🔄 Trying direct Chrome driver...")
             try:
                 driver = webdriver.Chrome(options=chrome_options)
@@ -319,8 +377,8 @@ def test_chrome_setup():
                 log_debug("✅ Chrome driver test completed successfully!")
                 return True, debug_messages
                 
-            except Exception as e2:
-                log_debug(f"❌ Direct Chrome driver also failed: {str(e2)}")
+            except Exception as e3:
+                log_debug(f"❌ Direct Chrome driver also failed: {str(e3)}")
                 log_debug(f"Full error: {traceback.format_exc()}")
                 return False, debug_messages
                 
@@ -341,40 +399,68 @@ def automate_maven_signup(emails, maven_url, delay_between_emails=2, log_contain
         debug_log("❌ ERROR: No emails provided to process!", log_container)
         return []
     
-    # Configure Chrome options for Render deployment
+    # Detect environment (Windows vs Linux/Render)
+    import platform
+    is_windows = platform.system().lower() == "windows"
+    is_render = os.environ.get('RENDER', False)
+    
+    debug_log(f"🔍 Environment detected: {'Windows' if is_windows else 'Linux/Render'}", log_container)
+    
+    # Configure Chrome options based on environment
     chrome_options = Options()
     
-    # Essential options for server environment
-    chrome_options.add_argument('--headless')  # Run in headless mode
-    chrome_options.add_argument('--no-sandbox')  # Required for root user
-    chrome_options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
-    chrome_options.add_argument('--disable-gpu')  # Disable GPU hardware acceleration
-    chrome_options.add_argument('--disable-extensions')  # Disable extensions
-    chrome_options.add_argument('--disable-web-security')  # Disable web security
-    chrome_options.add_argument('--allow-running-insecure-content')  # Allow insecure content
-    
-    # Additional options for stability
-    chrome_options.add_argument('--remote-debugging-port=9222')
-    chrome_options.add_argument('--disable-background-timer-throttling')
-    chrome_options.add_argument('--disable-backgrounding-occluded-windows')
-    chrome_options.add_argument('--disable-renderer-backgrounding')
-    chrome_options.add_argument('--disable-features=TranslateUI')
-    chrome_options.add_argument('--disable-ipc-flooding-protection')
-    
-    # Set Chrome binary location for Render
-    chrome_options.binary_location = "/usr/bin/google-chrome"
-    
-    # Set user data directory to avoid conflicts
-    chrome_options.add_argument('--user-data-dir=/tmp/chrome-user-data')
-    chrome_options.add_argument('--data-path=/tmp/chrome-data-path')
-    chrome_options.add_argument('--homedir=/tmp')
-    chrome_options.add_argument('--disk-cache-dir=/tmp/chrome-cache')
-    chrome_options.add_argument('--media-cache-dir=/tmp/chrome-media-cache')
-    chrome_options.add_argument('--disk-cache-size=1')
-    chrome_options.add_argument('--media-cache-size=1')
-    chrome_options.add_argument('--aggressive-cache-discard')
-    chrome_options.add_argument('--memory-pressure-off')
-    chrome_options.add_argument('--max_old_space_size=4096')
+    if is_windows:
+        # Windows-specific options
+        debug_log("🪟 Using Windows Chrome configuration", log_container)
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--allow-running-insecure-content')
+        
+        # Windows user data directory
+        import tempfile
+        temp_dir = tempfile.gettempdir()
+        chrome_options.add_argument(f'--user-data-dir={temp_dir}/chrome-user-data')
+        chrome_options.add_argument(f'--data-path={temp_dir}/chrome-data-path')
+        chrome_options.add_argument(f'--disk-cache-dir={temp_dir}/chrome-cache')
+        chrome_options.add_argument(f'--media-cache-dir={temp_dir}/chrome-media-cache')
+        
+    else:
+        # Linux/Render options
+        debug_log("🐧 Using Linux/Render Chrome configuration", log_container)
+        chrome_options.add_argument('--headless')  # Run in headless mode
+        chrome_options.add_argument('--no-sandbox')  # Required for root user
+        chrome_options.add_argument('--disable-dev-shm-usage')  # Overcome limited resource problems
+        chrome_options.add_argument('--disable-gpu')  # Disable GPU hardware acceleration
+        chrome_options.add_argument('--disable-extensions')  # Disable extensions
+        chrome_options.add_argument('--disable-web-security')  # Disable web security
+        chrome_options.add_argument('--allow-running-insecure-content')  # Allow insecure content
+        
+        # Additional options for stability
+        chrome_options.add_argument('--remote-debugging-port=9222')
+        chrome_options.add_argument('--disable-background-timer-throttling')
+        chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+        chrome_options.add_argument('--disable-renderer-backgrounding')
+        chrome_options.add_argument('--disable-features=TranslateUI')
+        chrome_options.add_argument('--disable-ipc-flooding-protection')
+        
+        # Set Chrome binary location for Render
+        if is_render:
+            chrome_options.binary_location = "/usr/bin/google-chrome"
+        
+        # Set user data directory to avoid conflicts
+        chrome_options.add_argument('--user-data-dir=/tmp/chrome-user-data')
+        chrome_options.add_argument('--data-path=/tmp/chrome-data-path')
+        chrome_options.add_argument('--homedir=/tmp')
+        chrome_options.add_argument('--disk-cache-dir=/tmp/chrome-cache')
+        chrome_options.add_argument('--media-cache-dir=/tmp/chrome-media-cache')
+        chrome_options.add_argument('--disk-cache-size=1')
+        chrome_options.add_argument('--media-cache-size=1')
+        chrome_options.add_argument('--aggressive-cache-discard')
+        chrome_options.add_argument('--memory-pressure-off')
+        chrome_options.add_argument('--max_old_space_size=4096')
     
     chrome_options.add_argument('--verbose')  # More verbose logging
     
@@ -386,44 +472,47 @@ def automate_maven_signup(emails, maven_url, delay_between_emails=2, log_contain
     try:
         debug_log("🔧 Attempting to initialize Chrome driver...", log_container)
         
-        # Try system ChromeDriver first (for Render deployment)
+        # Try webdriver-manager first (works on both Windows and Linux)
         try:
-            debug_log("🔧 Trying system ChromeDriver...", log_container)
+            debug_log("📦 Trying webdriver-manager...", log_container)
+            from webdriver_manager.chrome import ChromeDriverManager
             from selenium.webdriver.chrome.service import Service
             
-            # Use system ChromeDriver installed during build
-            chrome_driver_path = "/usr/local/bin/chromedriver"
-            debug_log(f"🔧 Using system ChromeDriver: {chrome_driver_path}", log_container)
+            chrome_driver_path = ChromeDriverManager().install()
+            debug_log(f"✓ ChromeDriver downloaded to: {chrome_driver_path}", log_container)
             
             service = Service(chrome_driver_path)
             debug_log("✓ ChromeDriver service created", log_container)
             
             driver = webdriver.Chrome(service=service, options=chrome_options)
-            debug_log("✅ Chrome driver initialized successfully with system ChromeDriver!", log_container)
+            debug_log("✅ Chrome driver initialized successfully with webdriver-manager!", log_container)
             
         except Exception as e:
-            debug_log(f"❌ System ChromeDriver failed: {str(e)}", log_container)
+            debug_log(f"❌ webdriver-manager failed: {str(e)}", log_container)
             debug_log(f"📋 Full error trace: {traceback.format_exc()}", log_container)
-            debug_log("🔄 Trying webdriver-manager as fallback...", log_container)
             
-            try:
-                # Fallback to webdriver-manager
-                from webdriver_manager.chrome import ChromeDriverManager
-                
-                chrome_driver_path = ChromeDriverManager().install()
-                debug_log(f"✓ ChromeDriver downloaded to: {chrome_driver_path}", log_container)
-                
-                service = Service(chrome_driver_path)
-                debug_log("✓ ChromeDriver service created", log_container)
-                
-                driver = webdriver.Chrome(service=service, options=chrome_options)
-                debug_log("✅ Chrome driver initialized successfully with webdriver-manager!", log_container)
-                
-            except Exception as e2:
-                debug_log(f"❌ webdriver-manager also failed: {str(e2)}", log_container)
-                debug_log(f"📋 Full error trace: {traceback.format_exc()}", log_container)
-                
-                # Final fallback - direct initialization
+            # Try system ChromeDriver on Linux/Render
+            if not is_windows:
+                debug_log("🔄 Trying system ChromeDriver on Linux...", log_container)
+                try:
+                    from selenium.webdriver.chrome.service import Service
+                    
+                    # Use system ChromeDriver installed during build
+                    chrome_driver_path = "/usr/local/bin/chromedriver"
+                    debug_log(f"🔧 Using system ChromeDriver: {chrome_driver_path}", log_container)
+                    
+                    service = Service(chrome_driver_path)
+                    debug_log("✓ ChromeDriver service created", log_container)
+                    
+                    driver = webdriver.Chrome(service=service, options=chrome_options)
+                    debug_log("✅ Chrome driver initialized successfully with system ChromeDriver!", log_container)
+                    
+                except Exception as e2:
+                    debug_log(f"❌ System ChromeDriver also failed: {str(e2)}", log_container)
+                    debug_log(f"📋 Full error trace: {traceback.format_exc()}", log_container)
+            
+            # Final fallback - direct initialization
+            if 'driver' not in locals():
                 debug_log("🔄 Trying direct Chrome driver initialization...", log_container)
                 try:
                     driver = webdriver.Chrome(options=chrome_options)
