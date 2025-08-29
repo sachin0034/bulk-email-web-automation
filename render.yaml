@@ -3,13 +3,10 @@ services:
     name: maven-email-automation
     env: python
     plan: free
-    region: oregon
     buildCommand: |
-      # Install system dependencies first
+      # Install Chrome and ChromeDriver
       apt-get update
-      apt-get install -y wget gnupg unzip curl software-properties-common
-
-      # Install Google Chrome
+      apt-get install -y wget gnupg unzip
       wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
       echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
       apt-get update
@@ -17,9 +14,6 @@ services:
 
       # Install ChromeDriver
       CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | awk -F'.' '{print $1}')
-      echo "Chrome version: $CHROME_VERSION"
-
-      # Download ChromeDriver
       wget -O /tmp/chromedriver.zip "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_VERSION.0.6045.105/linux64/chromedriver-linux64.zip"
       unzip /tmp/chromedriver.zip -d /usr/local/bin/
       chmod +x /usr/local/bin/chromedriver-linux64/chromedriver
@@ -28,25 +22,11 @@ services:
       # Install Python dependencies
       pip install -r requirements.txt
 
-      # Set environment variables
-      export CHROME_BIN=/usr/bin/google-chrome
-      export CHROMEDRIVER_PATH=/usr/local/bin/chromedriver
-
-      echo "Chrome installation completed"
-      echo "Chrome binary: $(which google-chrome)"
-      echo "ChromeDriver: $(which chromedriver)"
-
-    startCommand: "streamlit run main.py --server.port $PORT --server.address 0.0.0.0"
+    startCommand: streamlit run main.py --server.port $PORT --server.address 0.0.0.0
     envVars:
       - key: RENDER
         value: true
-      - key: PYTHON_VERSION
-        value: "3.11"
       - key: CHROME_BIN
         value: "/usr/bin/google-chrome"
       - key: CHROMEDRIVER_PATH
         value: "/usr/local/bin/chromedriver"
-      - key: DISPLAY
-        value: ":99"
-    healthCheckPath: /_stcore/health
-    autoDeploy: true
